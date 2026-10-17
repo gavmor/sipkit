@@ -1,0 +1,11 @@
+[package]
+name = "sipmath"
+version = "0.1.0"
+description = "SIPmath compute kernel: HDR 2.0 PRNG and Metalog quantile functions"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dev-dependencies]
+# float_roundtrip: default parsing may be off by one ulp; golden vectors need exact values.
+serde_json = { version = "1", features = ["float_roundtrip"] }

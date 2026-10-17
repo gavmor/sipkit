@@ -1,0 +1,6 @@
+/target/
+node_modules/
+dist/
+/packages/wasm/pkg/
+/lean/.lake/
+*.tsbuildinfo

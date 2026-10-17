@@ -1,0 +1,17 @@
+{
+  "name": "@sipmath/wasm",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./pkg/sipmath_wasm.d.ts",
+      "default": "./pkg/sipmath_wasm.js"
+    },
+    "./sipmath_wasm_bg.wasm": "./pkg/sipmath_wasm_bg.wasm"
+  },
+  "scripts": {
+    "build": "cargo build -p sipmath-wasm --release --target wasm32-unknown-unknown && wasm-bindgen --target web --out-dir pkg ../../target/wasm32-unknown-unknown/release/sipmath_wasm.wasm",
+    "test": "pnpm run build && node --test \"test/*.test.mjs\""
+  }
+}

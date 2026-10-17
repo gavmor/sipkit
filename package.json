@@ -1,0 +1,17 @@
+{
+  "name": "sipmath-monorepo",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.5.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "pnpm -r build",
+    "test": "pnpm run test:rust && pnpm run test:ts && pnpm run test:lean",
+    "test:rust": "cargo test --workspace",
+    "test:ts": "pnpm -r test",
+    "test:lean": "cd lean && lake build",
+    "lint": "cargo fmt --all --check && cargo clippy --workspace --all-targets -- -D warnings && pnpm -r typecheck"
+  }
+}

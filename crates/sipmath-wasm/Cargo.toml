@@ -1,0 +1,15 @@
+[package]
+name = "sipmath-wasm"
+version = "0.1.0"
+description = "wasm-bindgen bindings for the SIPmath kernel"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+sipmath = { path = "../sipmath" }
+# Must equal the installed wasm-bindgen-cli version.
+wasm-bindgen = "=0.2.129"
