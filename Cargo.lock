@@ -99,17 +99,17 @@ dependencies = [
 ]
 
 [[package]]
-name = "sipmath"
+name = "sipkit"
 version = "0.1.0"
 dependencies = [
  "serde_json",
 ]
 
 [[package]]
-name = "sipmath-wasm"
+name = "sipkit-wasm"
 version = "0.1.0"
 dependencies = [
- "sipmath",
+ "sipkit",
  "wasm-bindgen",
 ]
 

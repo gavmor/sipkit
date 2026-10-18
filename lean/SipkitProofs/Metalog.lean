@@ -12,7 +12,7 @@ A metalog quantile function is feasible iff it is strictly increasing on `(0, 1)
 
 @[expose] public section
 
-namespace SipmathProofs
+namespace SipkitProofs
 
 /-- `logit y = ln (y / (1 - y))`; only meaningful on `(0, 1)`. -/
 noncomputable def logit (y : ℝ) : ℝ := Real.log (y / (1 - y))
@@ -70,4 +70,4 @@ theorem metalog2_strictly_monotonic (a₁ a₂ : ℝ) (ha₂ : 0 < a₂) :
     StrictMonoOn (fun y => a₁ * g₁ y + a₂ * g₂ y) (Set.Ioo 0 1) :=
   (metalog2_strictMonoOn_iff a₁ a₂).mpr ha₂
 
-end SipmathProofs
+end SipkitProofs

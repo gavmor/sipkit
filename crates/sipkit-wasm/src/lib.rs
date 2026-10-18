@@ -1,10 +1,10 @@
 //! JavaScript bindings for the SIPmath kernel. Domain errors surface as thrown `Error`s.
 //!
 //! Integer arguments are taken as `f64` and validated here: wasm-bindgen's `u32` coercion would
-//! silently truncate `1.5` and wrap `-1`, diverging from `@sipmath/core`.
+//! silently truncate `1.5` and wrap `-1`, diverging from `@sipkit/core`.
 
-use sipmath::hdr::{self, HdrSeeds, MAX_SEED};
-use sipmath::metalog::{self, MetalogBounds};
+use sipkit::hdr::{self, HdrSeeds, MAX_SEED};
+use sipkit::metalog::{self, MetalogBounds};
 use wasm_bindgen::prelude::*;
 
 /// `value` as `u32` if it is an integer in `[0, max]`.

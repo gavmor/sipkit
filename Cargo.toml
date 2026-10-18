@@ -5,6 +5,8 @@ members = ["crates/*"]
 [workspace.package]
 edition = "2024"
 rust-version = "1.95"
+license = "MIT"
+repository = "https://github.com/gavmor/sipkit"
 publish = false
 
 [profile.release]

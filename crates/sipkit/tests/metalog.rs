@@ -1,4 +1,4 @@
-use sipmath::metalog::{Metalog, MetalogBounds, MetalogError};
+use sipkit::metalog::{Metalog, MetalogBounds, MetalogError};
 use std::path::Path;
 
 fn bounds_of(b: &serde_json::Value) -> MetalogBounds {

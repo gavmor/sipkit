@@ -1,20 +1,20 @@
-# sipmath
+# sipkit
 
-SIPmath kernel in three languages, per `sipmath_implementation_blueprint.md`:
+A kernel for the [SIPmath 3.1 Standard](https://www.probabilitymanagement.org/s/SIPmath-31-Standard-2025-01-31.pdf) in three languages, following [`docs/lib/sipmath_implementation_blueprint.md`](docs/lib/sipmath_implementation_blueprint.md):
 
 | Path | Language | Role |
 | :--- | :--- | :--- |
-| `crates/sipmath` | Rust | Core kernel: HDR 2.0 PRNG, Metalog quantile |
-| `crates/sipmath-wasm` | Rust → WASM | `wasm-bindgen` exports of the kernel |
-| `packages/wasm` | JS (generated) | `@sipmath/wasm`: built from `crates/sipmath-wasm` into `pkg/` |
-| `packages/core` | TypeScript | `@sipmath/core`: pure-TS HDR + Metalog for light simulation |
+| `crates/sipkit` | Rust | Core kernel: HDR 2.0 PRNG, Metalog quantile |
+| `crates/sipkit-wasm` | Rust → WASM | `wasm-bindgen` exports of the kernel |
+| `packages/wasm` | JS (generated) | `@sipkit/wasm`: built from `crates/sipkit-wasm` into `pkg/` |
+| `packages/core` | TypeScript | `@sipkit/core`: pure-TS HDR + Metalog for light simulation |
 | `lean` | Lean 4 + Mathlib | Proofs: logit derivative/monotonicity, 2-term Metalog monotonicity |
 | `fixtures` | JSON | Shared test vectors every implementation must reproduce |
 
 ## Toolchain
 
 - Rust 1.95.0 with `wasm32-unknown-unknown` (pinned in `rust-toolchain.toml`)
-- `wasm-bindgen-cli` at the exact version pinned in `crates/sipmath-wasm/Cargo.toml`
+- `wasm-bindgen-cli` at the exact version pinned in `crates/sipkit-wasm/Cargo.toml`
 - Node ≥ 22, pnpm 11
 - elan; Lean toolchain pinned in `lean/lean-toolchain` (fetch Mathlib build cache with `cd lean && lake exe cache get`)
 
@@ -24,7 +24,7 @@ SIPmath kernel in three languages, per `sipmath_implementation_blueprint.md`:
 pnpm install
 pnpm test          # cargo test --workspace, pnpm -r test (builds wasm first), lake build
 pnpm run lint      # rustfmt, clippy -D warnings, tsc --noEmit
-pnpm run build     # @sipmath/core dist/ and @sipmath/wasm pkg/
+pnpm run build     # @sipkit/core dist/ and @sipkit/wasm pkg/
 ```
 
 ## Fixtures
@@ -40,4 +40,18 @@ pnpm run build     # @sipmath/core dist/ and @sipmath/wasm pkg/
 
 ## Not yet implemented
 
-Blueprint components without code here: table lookup (empirical inverse CDF), Cholesky / Gaussian copula, SIPmath JSON schema validation (Zod), C FFI library, `rayon` multithreading.
+Blueprint components without code here, each tracked as an issue: table lookup ([#1](https://github.com/gavmor/sipkit/issues/1)), Cholesky / Gaussian copula ([#2](https://github.com/gavmor/sipkit/issues/2)), SIPmath JSON schema validation ([#3](https://github.com/gavmor/sipkit/issues/3)), C FFI library ([#4](https://github.com/gavmor/sipkit/issues/4)), `rayon` multithreading ([#5](https://github.com/gavmor/sipkit/issues/5)).
+
+Packages are distributed through GitHub only, not npm or crates.io.
+
+## References
+
+- D. W. Hubbard, "A Multi-Dimensional, Counter-Based Pseudo Random Number Generator as a Standard for Monte Carlo Simulations," *2019 Winter Simulation Conference*, [doi:10.1109/WSC40007.2019.9004773](https://doi.org/10.1109/WSC40007.2019.9004773).
+- T. W. Keelin, "The Metalog Distributions," *Decision Analysis* 13(4), 2016, [doi:10.1287/deca.2016.0338](https://doi.org/10.1287/deca.2016.0338).
+- ProbabilityManagement.org, [SIPmath 3.1 Standard](https://www.probabilitymanagement.org/s/SIPmath-31-Standard-2025-01-31.pdf) and [HDR 2.0 seed standard workbook](https://www.probabilitymanagement.org/s/HDR_2_0-Seed-Standard.xlsx) (source of the HDR fixture).
+
+## License
+
+[MIT](LICENSE).
+
+sipkit is an independent implementation. It is not affiliated with or endorsed by ProbabilityManagement.org. SIPmath™ is a trademark of ProbabilityManagement.org.

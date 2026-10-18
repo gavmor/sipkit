@@ -1,5 +1,6 @@
-name = "sipmath_proofs"
-defaultTargets = ["SipmathProofs"]
+name = "sipkit_proofs"
+license = "MIT"
+defaultTargets = ["SipkitProofs"]
 
 [[require]]
 name = "mathlib"
@@ -7,4 +8,4 @@ git = "https://github.com/leanprover-community/mathlib4"
 rev = "v4.35.0"
 
 [[lean_lib]]
-name = "SipmathProofs"
+name = "SipkitProofs"

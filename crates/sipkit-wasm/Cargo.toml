@@ -1,15 +1,17 @@
 [package]
-name = "sipmath-wasm"
+name = "sipkit-wasm"
 version = "0.1.0"
-description = "wasm-bindgen bindings for the SIPmath kernel"
+description = "wasm-bindgen bindings for the sipkit kernel"
 edition.workspace = true
 rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
 publish.workspace = true
 
 [lib]
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-sipmath = { path = "../sipmath" }
+sipkit = { path = "../sipkit" }
 # Must equal the installed wasm-bindgen-cli version.
 wasm-bindgen = "=0.2.129"

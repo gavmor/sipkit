@@ -1,4 +1,4 @@
-use sipmath::hdr::{HdrError, HdrSeeds, MAX_SEED, hdr_fill, hdr_uniform};
+use sipkit::hdr::{HdrError, HdrSeeds, MAX_SEED, hdr_fill, hdr_uniform};
 use std::path::Path;
 
 fn golden() -> (HdrSeeds, Vec<(u32, f64)>) {

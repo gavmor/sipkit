@@ -1,17 +1,18 @@
 {
-  "name": "@sipmath/wasm",
+  "name": "@sipkit/wasm",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "exports": {
     ".": {
-      "types": "./pkg/sipmath_wasm.d.ts",
-      "default": "./pkg/sipmath_wasm.js"
+      "types": "./pkg/sipkit_wasm.d.ts",
+      "default": "./pkg/sipkit_wasm.js"
     },
-    "./sipmath_wasm_bg.wasm": "./pkg/sipmath_wasm_bg.wasm"
+    "./sipkit_wasm_bg.wasm": "./pkg/sipkit_wasm_bg.wasm"
   },
   "scripts": {
-    "build": "cargo build -p sipmath-wasm --release --target wasm32-unknown-unknown && wasm-bindgen --target web --out-dir pkg ../../target/wasm32-unknown-unknown/release/sipmath_wasm.wasm",
+    "build": "cargo build -p sipkit-wasm --release --target wasm32-unknown-unknown && wasm-bindgen --target web --out-dir pkg ../../target/wasm32-unknown-unknown/release/sipkit_wasm.wasm",
     "test": "pnpm run build && node --test \"test/*.test.mjs\""
   }
 }

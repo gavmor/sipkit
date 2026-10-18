@@ -1,9 +1,11 @@
 [package]
-name = "sipmath"
+name = "sipkit"
 version = "0.1.0"
-description = "SIPmath compute kernel: HDR 2.0 PRNG and Metalog quantile functions"
+description = "Compute kernel for the SIPmath 3.1 Standard: HDR 2.0 PRNG and Metalog quantile functions"
 edition.workspace = true
 rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
 publish.workspace = true
 
 [dev-dependencies]

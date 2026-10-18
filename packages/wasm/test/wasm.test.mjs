@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { Metalog, hdrFill, hdrUniform, initSync } from '../pkg/sipmath_wasm.js';
+import { Metalog, hdrFill, hdrUniform, initSync } from '../pkg/sipkit_wasm.js';
 
-initSync({ module: readFileSync(new URL('../pkg/sipmath_wasm_bg.wasm', import.meta.url)) });
+initSync({ module: readFileSync(new URL('../pkg/sipkit_wasm_bg.wasm', import.meta.url)) });
 
 const fixture = (name) =>
   JSON.parse(readFileSync(new URL(`../../../fixtures/${name}`, import.meta.url), 'utf8'));

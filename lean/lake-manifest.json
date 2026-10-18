@@ -91,6 +91,6 @@
    "inputRev": "v4.35.0",
    "inherited": true,
    "configFile": "lakefile.toml"}],
- "name": "sipmath_proofs",
+ "name": "sipkit_proofs",
  "lakeDir": ".lake",
  "fixedToolchain": false}
