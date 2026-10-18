@@ -6,8 +6,8 @@ A kernel for the [SIPmath 3.1 Standard](https://www.probabilitymanagement.org/s/
 | :--- | :--- | :--- |
 | `crates/sipkit` | Rust | Core kernel: HDR 2.0 PRNG, Metalog quantile |
 | `crates/sipkit-wasm` | Rust → WASM | `wasm-bindgen` exports of the kernel |
-| `packages/wasm` | JS (generated) | `@sipkit/wasm`: built from `crates/sipkit-wasm` into `pkg/` |
-| `packages/core` | TypeScript | `@sipkit/core`: pure-TS HDR + Metalog for light simulation |
+| `packages/wasm` | JS (generated) | `@gavmor/sipkit-wasm`: built from `crates/sipkit-wasm` into `pkg/` (not published) |
+| `packages/core` | TypeScript | `@gavmor/sipkit-core`: pure-TS HDR + Metalog for light simulation |
 | `lean` | Lean 4 + Mathlib | Proofs: logit derivative/monotonicity, 2-term Metalog monotonicity |
 | `fixtures` | JSON | Shared test vectors every implementation must reproduce |
 
@@ -24,7 +24,7 @@ A kernel for the [SIPmath 3.1 Standard](https://www.probabilitymanagement.org/s/
 pnpm install
 pnpm test          # cargo test --workspace, pnpm -r test (builds wasm first), lake build
 pnpm run lint      # rustfmt, clippy -D warnings, tsc --noEmit
-pnpm run build     # @sipkit/core dist/ and @sipkit/wasm pkg/
+pnpm run build     # @gavmor/sipkit-core dist/ and @gavmor/sipkit-wasm pkg/
 ```
 
 ## Fixtures
@@ -42,7 +42,21 @@ pnpm run build     # @sipkit/core dist/ and @sipkit/wasm pkg/
 
 Components of the Standard without code here, each tracked as an issue: table lookup ([#1](https://github.com/gavmor/sipkit/issues/1)), Cholesky / Gaussian copula ([#2](https://github.com/gavmor/sipkit/issues/2)), SIPmath JSON schema validation ([#3](https://github.com/gavmor/sipkit/issues/3)), C FFI library ([#4](https://github.com/gavmor/sipkit/issues/4)), `rayon` multithreading ([#5](https://github.com/gavmor/sipkit/issues/5)).
 
-Packages are distributed through GitHub only, not npm or crates.io.
+## Installing `@gavmor/sipkit-core`
+
+The package is published to [GitHub Packages](https://github.com/gavmor/sipkit/pkgs/npm/sipkit-core), not npm. GitHub Packages requires a token to install, even for public packages.
+
+1. Create a classic personal access token with the `read:packages` scope and export it as `NODE_AUTH_TOKEN`. In GitHub Actions, use `secrets.GITHUB_TOKEN` with `permissions: packages: read`; the consuming repo must be granted access in the package's settings under "Manage Actions access".
+2. Add an `.npmrc` beside your `package.json`:
+   ```ini
+   @gavmor:registry=https://npm.pkg.github.com
+   //npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
+   ```
+3. `pnpm add @gavmor/sipkit-core`
+
+### Releasing
+
+Bump `version` in `packages/core/package.json`, commit, then push a matching tag: `git tag core-v0.1.0 && git push origin core-v0.1.0`. The `publish` workflow tests the package, checks the tag matches the version, and publishes it.
 
 ## References
 

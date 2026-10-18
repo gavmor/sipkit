@@ -1,0 +1,35 @@
+name: publish
+
+on:
+  push:
+    tags: ["core-v*"]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+          registry-url: https://npm.pkg.github.com
+          scope: "@gavmor"
+      - run: pnpm install --frozen-lockfile
+      - name: Tag matches package version
+        run: |
+          version=$(node -p "require('./packages/core/package.json').version")
+          if [ "$GITHUB_REF_NAME" != "core-v$version" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match core-v$version"
+            exit 1
+          fi
+      - run: pnpm --filter @gavmor/sipkit-core typecheck
+      - run: pnpm --filter @gavmor/sipkit-core test
+      - run: pnpm --filter @gavmor/sipkit-core publish --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

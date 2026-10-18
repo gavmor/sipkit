@@ -2,5 +2,6 @@
 node_modules/
 dist/
 /packages/wasm/pkg/
+/packages/core/LICENSE
 /lean/.lake/
 *.tsbuildinfo

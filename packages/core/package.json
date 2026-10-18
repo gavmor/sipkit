@@ -1,8 +1,16 @@
 {
-  "name": "@sipkit/core",
+  "name": "@gavmor/sipkit-core",
   "version": "0.1.0",
-  "private": true,
+  "description": "Pure-TypeScript HDR 2.0 PRNG and Metalog quantile functions for the SIPmath 3.1 Standard",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gavmor/sipkit.git",
+    "directory": "packages/core"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "type": "module",
   "exports": {
     ".": {
@@ -12,12 +20,14 @@
   },
   "types": "./dist/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "src"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prepack": "pnpm run build && cp ../../LICENSE ."
   },
   "devDependencies": {
     "@types/node": "^26.6.5",
