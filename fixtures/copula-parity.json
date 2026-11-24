@@ -45,67 +45,67 @@
         {
           "counter": 1,
           "uniforms": [
-            0.7263180113031811,
-            0.3866113438460619
+            0.7263180111239096,
+            0.38661134373461836
           ],
           "x": [
-            0.9760211438678246,
-            9.076842301635244
+            0.9760211429659665,
+            9.07684230069536
           ]
         },
         {
           "counter": 2,
           "uniforms": [
-            0.6267787276198593,
-            0.6858715954650113
+            0.6267787277387846,
+            0.6858715955793064
           ],
           "x": [
-            0.5184221045438233,
-            11.561777195249517
+            0.5184221050522093,
+            11.5617771963105
           ]
         },
         {
           "counter": 7,
           "uniforms": [
-            0.009668115962405077,
-            0.23628633127211335
+            0.009668115976962599,
+            0.2362863312090951
           ],
           "x": [
-            -4.629206666125314,
-            7.653702795891075
+            -4.629206664604888,
+            7.653702795192637
           ]
         },
         {
           "counter": 8,
           "uniforms": [
-            0.08186843750903527,
-            0.04442044387867072
+            0.08186843760273471,
+            0.04442044390345545
           ],
           "x": [
-            -2.417227156430666,
-            3.862763579442703
+            -2.4172271551841,
+            3.862763580610493
           ]
         },
         {
           "counter": 100,
           "uniforms": [
-            0.845700719233548,
-            0.6644710416112696
+            0.8457007189782796,
+            0.6644710414311006
           ],
           "x": [
-            1.7012714391563262,
-            11.366566062353765
+            1.7012714372001119,
+            11.366566060737533
           ]
         },
         {
           "counter": 1000,
           "uniforms": [
-            0.09145389406760485,
-            0.008968273289916506
+            0.0914538939368773,
+            0.008968273297427776
           ],
           "x": [
-            -2.2960106807466016,
-            0.5898932210845089
+            -2.296010682319925,
+            0.5898932227747427
           ]
         }
       ],
@@ -161,23 +161,23 @@
         {
           "counter": 7,
           "uniforms": [
-            0.009668115962405077,
-            0.6988139828340785
+            0.009668115976962599,
+            0.6988139826387199
           ],
           "x": [
-            -4.629206666125314,
-            11.683313033486481
+            -4.629206664604888,
+            11.683313031630105
           ]
         },
         {
           "counter": 42,
           "uniforms": [
-            0.9390970088986387,
-            0.09419317847244046
+            0.939097008879048,
+            0.09419317829133689
           ],
           "x": [
-            2.7356364962586004,
-            5.473043403114482
+            2.7356364959160695,
+            5.473043398869245
           ]
         }
       ],
@@ -256,27 +256,27 @@
         {
           "counter": 7,
           "uniforms": [
-            0.009668115962405077,
-            0.23628633127211335,
-            0.3130988659384064
+            0.009668115976962599,
+            0.2362863312090951,
+            0.31309886592742775
           ],
           "x": [
-            -4.629206666125314,
-            7.653702795891075,
-            -5.392835682960223
+            -4.629206664604888,
+            7.653702795192637,
+            -5.392835682985747
           ]
         },
         {
           "counter": 8,
           "uniforms": [
-            0.08186843750903527,
-            0.04442044387867072,
-            0.006147576827187973
+            0.08186843760273471,
+            0.04442044390345545,
+            0.0061475768015947785
           ],
           "x": [
-            -2.417227156430666,
-            3.862763579442703,
-            -7.542765367832583
+            -2.4172271551841,
+            3.862763580610493,
+            -7.542765369927027
           ]
         }
       ],
@@ -288,6 +288,8 @@
       }
     }
   ],
-  "description": "Gaussian copula cross-language parity vectors. Generated from the Rust kernel (the canonical implementation); the TypeScript and WASM kernels must reproduce every value exactly (bit-identical f64). Exactness is the point: the three implementations mirror the same arithmetic (same Acklam coefficients, same Horner order, same Cholesky recurrence), and any transcription drift must fail here, not in production Monte Carlo runs.",
-  "source": "Generated from the Rust kernel (the canonical implementation); regenerate with `cargo run -p sipkit --example gen_copula_fixture > fixtures/copula-parity.json`."
+  "description": "Gaussian copula cross-language parity vectors. Generated from the Rust kernel (the canonical implementation); the TypeScript and WASM kernels must reproduce them. Cholesky factors must match exactly (bit-identical f64: only +, -, *, / and sqrt, which IEEE 754 rounds exactly). Correlated uniforms and samples pass through ln and exp, which Rust libm, WASM and V8 may round one ulp apart, so they are compared within value_tol. The three implementations still mirror the same arithmetic (same AS 241 coefficients, same Horner order, same Cholesky recurrence), so transcription drift fails here by orders of magnitude, not by one ulp.",
+  "source": "Generated from the Rust kernel (the canonical implementation); regenerate with `cargo run -p sipkit --example gen_copula_fixture > fixtures/copula-parity.json`.",
+  "value_tol": 1e-15,
+  "value_tol_rule": "|actual - expected| <= value_tol * max(1, |expected|), for correlated uniforms and samples; factors are compared exactly"
 }

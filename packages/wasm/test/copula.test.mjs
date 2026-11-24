@@ -135,31 +135,40 @@ const fixture = (name) =>
 const metalogOf = ({ a, bounds }) =>
   new Metalog(Float64Array.from(a), bounds.lower, bounds.upper);
 
-test('GaussianCopula matches the shared parity fixture exactly', () => {
-  // Exactness is the point: this file is also checked by the Rust and
-  // TS suites, so any transcription drift fails here.
-  for (const c of fixture('copula-parity.json').cases) {
+test('GaussianCopula matches the shared parity fixture', () => {
+  // The Cholesky factor is exact (only +, -, *, / and sqrt). Correlated
+  // uniforms and samples pass through ln/exp, which engines may round one
+  // ulp apart, so they use the fixture's declared tolerance. The same file
+  // is checked by the Rust and TS suites.
+  const parity = fixture('copula-parity.json');
+  const close = (actual, expected, what) => {
+    assert.equal(actual.length, expected.length, `${what} length`);
+    actual.forEach((a, i) => {
+      const e = expected[i];
+      assert.ok(
+        Math.abs(a - e) <= parity.value_tol * Math.max(1, Math.abs(e)),
+        `${what}[${i}]: ${a} vs ${e}`,
+      );
+    });
+  };
+  for (const c of parity.cases) {
     const n = c.marginals.length;
     const cop = new GaussianCopula(c.correlation.flat(), n, c.marginals.map(metalogOf));
     assert.deepEqual([...cop.factor()], c.factor.flat());
     const { entity, varId, seed3, seed4 } = c.seeds;
     for (const s of c.samples) {
-      assert.deepEqual(
+      close(
         [...cop.sampleUniforms(s.counter, entity, varId, seed3, seed4)],
         s.uniforms,
         `counter ${s.counter} uniforms`,
       );
-      assert.deepEqual(
-        [...cop.sample(s.counter, entity, varId, seed3, seed4)],
-        s.x,
-        `counter ${s.counter}`,
-      );
+      close([...cop.sample(s.counter, entity, varId, seed3, seed4)], s.x, `counter ${s.counter}`);
     }
     cop.free();
   }
 });
 
-test('normalQuantile / normalCdf match the scipy accuracy fixture', () => {
+test('normalQuantile / normalCdf match the normal accuracy fixture', () => {
   const { quantile_tol, cdf_tol, quantile, cdf } = fixture('normal-accuracy.json');
   for (const { p, z } of quantile) {
     const err = Math.abs(normalQuantile(p) - z);

@@ -246,11 +246,22 @@ fn copula_rejects_bad_construction() {
 
 #[test]
 fn copula_matches_shared_parity_fixture() {
-    // The fixture is generated from this (canonical) implementation, so
-    // the values must match exactly — bit-identical f64. The same file
-    // is checked by the TS and WASM suites; any transcription drift in
-    // any language fails here.
+    // The fixture is generated from this (canonical) implementation. The
+    // Cholesky factor must match exactly (bit-identical f64); correlated
+    // uniforms and samples pass through ln/exp, which other engines may
+    // round one ulp apart, so they are compared within `value_tol`. The
+    // same file is checked by the TS and WASM suites.
     let json = fixture_json("copula-parity.json");
+    let tol = json["value_tol"].as_f64().unwrap();
+    let close = |actual: &[f64], expected: &[f64], what: &str| {
+        assert_eq!(actual.len(), expected.len(), "{what} length");
+        for (a, e) in actual.iter().zip(expected) {
+            assert!(
+                (a - e).abs() <= tol * e.abs().max(1.0),
+                "{what}: {a} vs {e}"
+            );
+        }
+    };
     for case in json["cases"].as_array().unwrap() {
         let seeds = HdrSeeds {
             entity: case["seeds"]["entity"].as_u64().unwrap() as u32,
@@ -268,24 +279,24 @@ fn copula_matches_shared_parity_fixture() {
         assert_eq!(cop.factor().to_vec(), f64_mat(&case["factor"]));
         for s in case["samples"].as_array().unwrap() {
             let counter = s["counter"].as_u64().unwrap() as u32;
-            assert_eq!(
-                cop.sample_uniforms(counter, &seeds).unwrap(),
-                f64_vec(&s["uniforms"]),
-                "counter {counter} uniforms"
+            close(
+                &cop.sample_uniforms(counter, &seeds).unwrap(),
+                &f64_vec(&s["uniforms"]),
+                &format!("counter {counter} uniforms"),
             );
-            assert_eq!(
-                cop.sample(counter, &seeds).unwrap(),
-                f64_vec(&s["x"]),
-                "counter {counter} sample"
+            close(
+                &cop.sample(counter, &seeds).unwrap(),
+                &f64_vec(&s["x"]),
+                &format!("counter {counter} sample"),
             );
         }
     }
 }
 
 #[test]
-fn normal_matches_scipy_fixture() {
+fn normal_matches_accuracy_fixture() {
     // Tolerances come from the fixture itself; see its `measured` note
-    // for how they were chosen (observed max error x ~9 headroom).
+    // for how they were chosen (observed max error with ~4x headroom).
     let json = fixture_json("normal-accuracy.json");
     let qtol = json["quantile_tol"].as_f64().unwrap();
     let ctol = json["cdf_tol"].as_f64().unwrap();

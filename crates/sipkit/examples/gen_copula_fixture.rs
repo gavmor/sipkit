@@ -61,7 +61,9 @@ fn case(
 fn main() {
     let unbounded = MetalogBounds::Unbounded;
     let fixture = json!({
-        "description": "Gaussian copula cross-language parity vectors. Generated from the Rust kernel (the canonical implementation); the TypeScript and WASM kernels must reproduce every value exactly (bit-identical f64). Exactness is the point: the three implementations mirror the same arithmetic (same Acklam coefficients, same Horner order, same Cholesky recurrence), and any transcription drift must fail here, not in production Monte Carlo runs.",
+        "description": "Gaussian copula cross-language parity vectors. Generated from the Rust kernel (the canonical implementation); the TypeScript and WASM kernels must reproduce them. Cholesky factors must match exactly (bit-identical f64: only +, -, *, / and sqrt, which IEEE 754 rounds exactly). Correlated uniforms and samples pass through ln and exp, which Rust libm, WASM and V8 may round one ulp apart, so they are compared within value_tol. The three implementations still mirror the same arithmetic (same AS 241 coefficients, same Horner order, same Cholesky recurrence), so transcription drift fails here by orders of magnitude, not by one ulp.",
+        "value_tol": 1e-15,
+        "value_tol_rule": "|actual - expected| <= value_tol * max(1, |expected|), for correlated uniforms and samples; factors are compared exactly",
         "source": "Generated from the Rust kernel (the canonical implementation); regenerate with `cargo run -p sipkit --example gen_copula_fixture > fixtures/copula-parity.json`.",
         "cases": [
             case(
