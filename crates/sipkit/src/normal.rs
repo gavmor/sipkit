@@ -1,5 +1,5 @@
 //! Standard normal CDF / quantile. The quantile delegates to `distrs`
-//! (Wichura AS 241); the CDF is Abramowitz & Stegun 7.1.26. The WASM bridge
+//! (Wichura AS 241); the CDF is `libm::erfc`-based. The WASM bridge
 //! calls these directly, so there is no second implementation to drift.
 
 /// Standard normal pdf.
@@ -10,26 +10,13 @@ pub fn normal_pdf(x: f64) -> f64 {
     (-0.5 * x * x).exp() / (2.0 * std::f64::consts::PI).sqrt()
 }
 
-/// Standard normal CDF, via the error function
-/// (Abramowitz & Stegun 7.1.26, |error| < 1.5e-7).
+/// Standard normal CDF: `Φ(x) = ½ · erfc(−x/√2)`, via [`libm::erfc`].
+///
+/// Going through `erfc` (not `1 + erf`) keeps full relative precision in
+/// the left tail, where `1 + erf` cancels. Pure Rust, so it builds for
+/// `wasm32-unknown-unknown`. NaN in, NaN out; ±∞ map to 1 and 0.
 pub fn normal_cdf(x: f64) -> f64 {
-    if x.is_nan() {
-        return f64::NAN;
-    }
-    if x == f64::INFINITY {
-        return 1.0;
-    }
-    if x == f64::NEG_INFINITY {
-        return 0.0;
-    }
-    let s = if x < 0.0 { -1.0 } else { 1.0 };
-    let ax = x.abs() / std::f64::consts::SQRT_2;
-    let t = 1.0 / (1.0 + 0.3275911 * ax);
-    let poly = ((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t - 0.284496736) * t
-        + 0.254829592)
-        * t;
-    let erf = 1.0 - poly * (-ax * ax).exp();
-    0.5 * (1.0 + s * erf)
+    0.5 * libm::erfc(-x * std::f64::consts::FRAC_1_SQRT_2)
 }
 
 /// Standard normal quantile Φ⁻¹(p): Wichura's Algorithm AS 241 (PPND16),

@@ -40,6 +40,8 @@ X_POINTS = [
     -6.0, -5.0, -4.0, -3.5, -3.0, -2.5, -2.0, -1.5, -1.0, -0.5,
     -0.25, 0.0, 0.25, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 5.0, 6.0,
 ]
+# Deep tails: Phi(-37) ~ 6e-300, and 7, 8, 10 on the upper side.
+X_POINTS = sorted(set(X_POINTS) | {-37.0, -30.0, -20.0, -10.0, -8.0, -7.0, 7.0, 8.0, 10.0})
 
 
 def exact_quantile_lower(p) -> float:
@@ -62,18 +64,20 @@ def exact_quantile(p: float) -> float:
 MEASURED = {
     "quantile_max_scaled_error": 4.627e-16,
     "quantile_max_scaled_error_at_p": 0.07499999999999998,
-    "cdf_max_abs_error": 6.925e-08,
-    "cdf_max_abs_error_at_x": -3.0,
+    "cdf_max_rel_error": 8.791e-14,
+    "cdf_max_rel_error_at_x": -37.0,
     "note": (
         "Measured 2026-11-24 against the mpmath references in this file: the "
         "Rust quantile's worst scaled error is 4.6e-16, just below the 0.425 "
         "region boundary. The quantile is Wichura AS 241 "
-        "(PPND16); the CDF is still Abramowitz & Stegun 7.1.26. Tolerances are "
-        "set from these measurements, not from published claims."
+        "(PPND16); the CDF is 0.5 * erfc(-x / sqrt(2)) via libm. CDF relative "
+        "error grows like x^2 * eps from rounding -x / sqrt(2): <= 4.4e-15 for "
+        "|x| <= 10, 8.8e-14 at x = -37. Tolerances are set from these "
+        "measurements (about 4.5x headroom), not from published claims."
     ),
 }
 QUANTILE_TOL = 2e-15
-CDF_TOL = 1.5e-07
+CDF_TOL = 4e-13
 
 fixture = {
     "description": (
@@ -86,7 +90,7 @@ fixture = {
     "quantile_tol": QUANTILE_TOL,
     "quantile_tol_rule": "|actual - expected| <= quantile_tol * max(1, |expected|)",
     "cdf_tol": CDF_TOL,
-    "cdf_tol_rule": "|actual - expected| <= cdf_tol (absolute); this is the published A&S 7.1.26 bound",
+    "cdf_tol_rule": "|actual - expected| <= cdf_tol * expected (relative; every expected value is > 0)",
     "quantile": [{"p": p, "z": exact_quantile(p)} for p in P_POINTS],
     "cdf": [{"x": x, "p": float(ncdf(mpf(x)))} for x in X_POINTS],
 }
