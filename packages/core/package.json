@@ -1,7 +1,7 @@
 {
   "name": "@gavmor/sipkit-core",
-  "version": "0.1.0",
-  "description": "Pure-TypeScript HDR 2.0 PRNG and Metalog quantile functions for the SIPmath 3.1 Standard",
+  "version": "0.2.0",
+  "description": "Thin TypeScript orchestration shell over @gavmor/sipkit-wasm for SIPmath 3.1 models: Zod validation, batch evaluation, Welford summaries",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -25,13 +25,17 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "pnpm --filter @gavmor/sipkit-wasm run build && tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "prepack": "pnpm run build && cp ../../LICENSE ."
   },
   "devDependencies": {
+    "@gavmor/sipkit-wasm": "workspace:*",
     "@types/node": "^26.6.5",
     "typescript": "^7.0.2",
     "vitest": "^5.0.5"
+  },
+  "dependencies": {
+    "zod": "^3.25.76"
   }
 }

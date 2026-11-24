@@ -1,4 +1,4 @@
-use sipkit::copula::{GaussianCopula, cholesky, correlated_uniforms};
+use sipkit::copula::{GaussianCopula, cholesky, cholesky_flat, correlated_uniforms};
 use sipkit::hdr::HdrSeeds;
 use sipkit::metalog::{Metalog, MetalogBounds};
 use sipkit::normal::{normal_cdf, normal_quantile};
@@ -128,6 +128,33 @@ fn cholesky_rejects_bad_input() {
 }
 
 #[test]
+fn cholesky_flat_matches_nested_cholesky() {
+    let l = cholesky_flat(&[4.0, 2.0, 2.0, 3.0], 2).unwrap();
+    assert_eq!(l.len(), 4);
+    assert!((l[0] - 2.0).abs() < 1e-12);
+    assert!((l[2] - 1.0).abs() < 1e-12);
+    assert!((l[3] - std::f64::consts::SQRT_2).abs() < 1e-12);
+    let r = vec![1.0, 0.8, 0.3, 0.8, 1.0, 0.5, 0.3, 0.5, 1.0];
+    let l3 = cholesky_flat(&r, 3).unwrap();
+    for i in 0..3 {
+        for j in 0..3 {
+            let mut s = 0.0;
+            for k in 0..3 {
+                s += l3[i * 3 + k] * l3[j * 3 + k];
+            }
+            assert!((s - r[i * 3 + j]).abs() < 1e-12, "({i}, {j})");
+        }
+    }
+}
+
+#[test]
+fn cholesky_flat_rejects_bad_input() {
+    assert!(cholesky_flat(&[1.0, 2.0, 2.0, 1.0], 2).is_err());
+    assert!(cholesky_flat(&[1.0, 0.5], 2).is_err());
+    assert!(cholesky_flat(&[], 0).is_err());
+}
+
+#[test]
 fn copula_is_reproducible() {
     let seeds = HdrSeeds {
         entity: 1,
@@ -250,7 +277,7 @@ fn copula_matches_shared_parity_fixture() {
     // Cholesky factor must match exactly (bit-identical f64); correlated
     // uniforms and samples pass through ln/exp, which other engines may
     // round one ulp apart, so they are compared within `value_tol`. The
-    // same file is checked by the TS and WASM suites.
+    // same file is checked by the WASM suite.
     let json = fixture_json("copula-parity.json");
     let tol = json["value_tol"].as_f64().unwrap();
     let close = |actual: &[f64], expected: &[f64], what: &str| {

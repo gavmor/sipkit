@@ -1,7 +1,6 @@
 //! Standard normal CDF / quantile. The quantile delegates to `distrs`
-//! (Wichura AS 241); the CDF is Abramowitz & Stegun 7.1.26. The TS mirror
-//! in `packages/core/src/normal.ts` ports both by hand, so the two kernels
-//! agree to the last digit the approximations allow.
+//! (Wichura AS 241); the CDF is Abramowitz & Stegun 7.1.26. The WASM bridge
+//! calls these directly, so there is no second implementation to drift.
 
 /// Standard normal pdf.
 pub fn normal_pdf(x: f64) -> f64 {
@@ -37,10 +36,7 @@ pub fn normal_cdf(x: f64) -> f64 {
 /// Applied Statistics 37 (1988) 477-484, via [`distrs::Normal::ppf`].
 ///
 /// Returns NaN unless `0 < p < 1`, matching `Metalog::quantile`'s domain
-/// convention (`distrs` itself returns ±∞ at 0 and 1). The TypeScript
-/// mirror (`packages/core/src/normal.ts`) is a hand port of the same
-/// algorithm, since JS has no equivalent primitive; its 45 coefficients
-/// were diffed against R's `src/nmath/qnorm.c`.
+/// convention (`distrs` itself returns ±∞ at 0 and 1).
 ///
 /// Measured against mpmath references (`fixtures/normal-accuracy.json`):
 /// max scaled error 4.6e-16, in every branch down to p = 1e-300.

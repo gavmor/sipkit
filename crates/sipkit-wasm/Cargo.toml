@@ -1,6 +1,6 @@
 [package]
 name = "sipkit-wasm"
-version = "0.1.0"
+version = "0.2.0"
 description = "wasm-bindgen bindings for the sipkit kernel"
 edition.workspace = true
 rust-version.workspace = true

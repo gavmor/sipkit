@@ -6,7 +6,7 @@
   "quantile_max_scaled_error_at_p": 0.07499999999999998,
   "cdf_max_abs_error": 6.925e-08,
   "cdf_max_abs_error_at_x": -3.0,
-  "note": "Measured 2026-11-24 against the mpmath references in this file: the TS and WASM (= Rust) quantiles are bit-identical, with the worst case just below the 0.425 region boundary. The quantile is Wichura AS 241 (PPND16); the CDF is still Abramowitz & Stegun 7.1.26. Tolerances are set from these measurements, not from published claims."
+  "note": "Measured 2026-11-24 against the mpmath references in this file: the Rust quantile's worst scaled error is 4.6e-16, just below the 0.425 region boundary. The quantile is Wichura AS 241 (PPND16); the CDF is still Abramowitz & Stegun 7.1.26. Tolerances are set from these measurements, not from published claims."
  },
  "quantile_tol": 2e-15,
  "quantile_tol_rule": "|actual - expected| <= quantile_tol * max(1, |expected|)",

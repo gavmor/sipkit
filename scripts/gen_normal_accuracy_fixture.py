@@ -11,8 +11,8 @@ byte-identically; if it does not, either mpmath changed or the fixture was
 hand-edited.
 
 The `measured` block and tolerances below are constants, set from the errors
-observed in the Rust and TS kernels. Update them by hand, together with the
-measurement, whenever the implementation changes.
+observed in the Rust kernel (and the WASM build of it). Update them by hand,
+together with the measurement, whenever the implementation changes.
 """
 import json
 import math
@@ -66,8 +66,8 @@ MEASURED = {
     "cdf_max_abs_error_at_x": -3.0,
     "note": (
         "Measured 2026-11-24 against the mpmath references in this file: the "
-        "TS and WASM (= Rust) quantiles are bit-identical, with the worst case "
-        "just below the 0.425 region boundary. The quantile is Wichura AS 241 "
+        "Rust quantile's worst scaled error is 4.6e-16, just below the 0.425 "
+        "region boundary. The quantile is Wichura AS 241 "
         "(PPND16); the CDF is still Abramowitz & Stegun 7.1.26. Tolerances are "
         "set from these measurements, not from published claims."
     ),
