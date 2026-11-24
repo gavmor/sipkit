@@ -289,5 +289,5 @@
     }
   ],
   "description": "Gaussian copula cross-language parity vectors. Generated from the Rust kernel (the canonical implementation); the TypeScript and WASM kernels must reproduce every value exactly (bit-identical f64). Exactness is the point: the three implementations mirror the same arithmetic (same Acklam coefficients, same Horner order, same Cholesky recurrence), and any transcription drift must fail here, not in production Monte Carlo runs.",
-  "source": "Generated 2026-11-24 by crates/sipkit/examples/gen_copula_fixture.rs (temporary, deleted after generation) from the Rust kernel at the PR #6 head."
+  "source": "Generated from the Rust kernel (the canonical implementation); regenerate with `cargo run -p sipkit --example gen_copula_fixture > fixtures/copula-parity.json`."
 }
