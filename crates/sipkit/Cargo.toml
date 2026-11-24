@@ -11,3 +11,6 @@ publish.workspace = true
 [dev-dependencies]
 # float_roundtrip: default parsing may be off by one ulp; golden vectors need exact values.
 serde_json = { version = "1", features = ["float_roundtrip"] }
+
+[dependencies]
+distrs = "0.2.3"

@@ -15,6 +15,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4e7648175b45a9a48536d676f68d918270699102aa8dab5496df06904c914600"
 
 [[package]]
+name = "distrs"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2906d3628a885aa49a23b88e71f63e51ae8df41cd76652287f0a6179a11833a9"
+
+[[package]]
 name = "itoa"
 version = "1.0.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -102,6 +108,7 @@ dependencies = [
 name = "sipkit"
 version = "0.1.0"
 dependencies = [
+ "distrs",
  "serde_json",
 ]
 
