@@ -7,7 +7,7 @@ A kernel for the [SIPmath 3.1 Standard](https://www.probabilitymanagement.org/s/
 | `crates/sipkit` | Rust | Core kernel: HDR 2.0 PRNG, Metalog quantile |
 | `crates/sipkit-wasm` | Rust → WASM | `wasm-bindgen` exports of the kernel |
 | `packages/wasm` | JS (generated) | `@gavmor/sipkit-wasm`: built from `crates/sipkit-wasm` into `pkg/` (not published) |
-| `packages/core` | TypeScript | `@gavmor/sipkit-core`: pure-TS HDR + Metalog for light simulation |
+| `packages/core` | TypeScript | `@gavmor/sipkit-core`: thin orchestration shell — Zod validation of SIPmath JSON models, batch evaluation over `@gavmor/sipkit-wasm` |
 | `lean` | Lean 4 + Mathlib | Proofs: logit derivative/monotonicity, 2-term Metalog monotonicity |
 | `fixtures` | JSON | Shared test vectors every implementation must reproduce |
 
@@ -34,14 +34,14 @@ pnpm run build     # @gavmor/sipkit-core dist/ and @gavmor/sipkit-wasm pkg/
 
 ## Design notes
 
-- **HDR.** The formula is the HDR 2.0 standard from the seed-standard workbook (five seeds: counter, entity, varId, seed3, seed4). Seeds are restricted to 8 decimal digits (`MAX_SEED = 99_999_999`); within that domain every intermediate stays below 2^53, so TypeScript uses plain `number` arithmetic, not `BigInt`.
+- **HDR.** The formula is the HDR 2.0 standard from the seed-standard workbook (five seeds: counter, entity, varId, seed3, seed4). Seeds are restricted to 8 decimal digits (`MAX_SEED = 99_999_999`); within that domain every intermediate stays below 2^53, so the kernel uses plain `u64` arithmetic and the WASM bridge passes seeds as `u32`, never `BigInt`.
 - **Metalog domain.** `quantile(y)` returns `NaN` outside the open interval (0, 1) instead of clamping. Bounded form is evaluated as `bL + (bU − bL) / (1 + e^−M)` to avoid `inf/inf` overflow.
 - **Lean.** A 2-term Metalog is strictly increasing on (0, 1) if and only if `a₂ > 0`; both directions are proved.
-- **Gaussian copula.** `GaussianCopula` couples Metalog marginals with a correlation matrix: Cholesky factor `L` of `R`, `z = Φ⁻¹(u)` from HDR uniforms (one `varId` per dimension), `w = Lz`, `v = Φ(w)`, then `xᵢ = Fᵢ⁻¹(vᵢ)`. Implemented in Rust (`crates/sipkit`, the canonical kernel), exposed via WASM (`crates/sipkit-wasm`: `GaussianCopula`, `cholesky`, `normalQuantile`, `normalCdf`), and mirrored in TypeScript (`packages/core`). `normalQuantile` is Wichura's AS 241 (PPND16; measured error ≤ 4.7e-16 scaled against mpmath references), delegated to the [`distrs`](https://crates.io/crates/distrs) crate in Rust and hand-ported in TS; `normalCdf` is still Abramowitz & Stegun 7.1.26 (|error| < 1.5e-7). Rust, TS and WASM agree bit-for-bit on the quantile fixture and on Cholesky factors; correlated uniforms and samples are compared within 1e-15 because `ln`/`exp` can round one ulp apart across engines. A non-PSD matrix throws instead of being silently clipped.
+- **Gaussian copula.** `GaussianCopula` couples Metalog marginals with a correlation matrix: Cholesky factor `L` of `R`, `z = Φ⁻¹(u)` from HDR uniforms (one `varId` per dimension), `w = Lz`, `v = Φ(w)`, then `xᵢ = Fᵢ⁻¹(vᵢ)`. Implemented once, in Rust (`crates/sipkit`, the canonical kernel), exposed via WASM batch endpoints (`crates/sipkit-wasm`: `hdrBatch`, `metalogBatch`, `hdrMetalogBatch`, `gaussianCopulaBatch`, `choleskyDecompose`, `lookupBatch`, `hdrMetalogStats`), and orchestrated from TypeScript by `SipModelRunner` (`packages/core`). `normalQuantile` is Wichura's AS 241 (PPND16; measured error ≤ 4.7e-16 scaled against mpmath references), delegated to the [`distrs`](https://crates.io/crates/distrs) crate; `normalCdf` is still Abramowitz & Stegun 7.1.26 (|error| < 1.5e-7). Cholesky factors agree bit-for-bit; correlated uniforms and samples are compared within 1e-15 because `ln`/`exp` can round one ulp apart across engines. A non-PSD matrix throws instead of being silently clipped.
 
 ## Not yet implemented
 
-Components of the Standard without code here, each tracked as an issue: table lookup ([#1](https://github.com/gavmor/sipkit/issues/1)), SIPmath JSON schema validation ([#3](https://github.com/gavmor/sipkit/issues/3)), C FFI library ([#4](https://github.com/gavmor/sipkit/issues/4)), `rayon` multithreading ([#5](https://github.com/gavmor/sipkit/issues/5)). Cholesky / Gaussian copula ([#2](https://github.com/gavmor/sipkit/issues/2)) is done in Rust, WASM, and TypeScript.
+Components of the Standard without code here, each tracked as an issue: C FFI library ([#4](https://github.com/gavmor/sipkit/issues/4)), `rayon` multithreading ([#5](https://github.com/gavmor/sipkit/issues/5)). Cholesky / Gaussian copula ([#2](https://github.com/gavmor/sipkit/issues/2)) is done in Rust + WASM. The lookup evaluation path ([#1](https://github.com/gavmor/sipkit/issues/1)) and Zod model validation ([#3](https://github.com/gavmor/sipkit/issues/3)) exist in the kernel, the WASM bridge, and the TypeScript shell — but neither issue's acceptance is fully met yet: the canonical libraries still aren't vendored into `fixtures/canonical/`, so no Lib 06 trial reproduction or all-10-libs parse check runs, and #3's separate `@gavmor/sipkit-schema` package was superseded by validating inside core.
 
 ## Installing `@gavmor/sipkit-core`
 
@@ -57,7 +57,7 @@ The package is published to [GitHub Packages](https://github.com/gavmor/sipkit/p
 
 ### Releasing
 
-Bump `version` in `packages/core/package.json`, commit, then push a matching tag: `git tag core-v0.1.0 && git push origin core-v0.1.0`. The `publish` workflow tests the package, checks the tag matches the version, and publishes it.
+Bump `version` in `packages/core/package.json`, commit, then push a matching tag: `git tag core-v0.2.0 && git push origin core-v0.2.0`. The `publish` workflow tests the package, checks the tag matches the version, and publishes it.
 
 ## References
 

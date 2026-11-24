@@ -1,7 +1,7 @@
 //! Cholesky factorisation and the Gaussian copula, fitting sipkit's
 //! SIPmath 3.1 kernel (HDR 2.0 PRNG + Metalog marginals).
 //!
-//! Mirrors `packages/core/src/copula.ts`. Recipe (the standard one):
+//! Recipe (the standard one):
 //!
 //!   1. `z_i = Φ⁻¹(u_i)` for independent uniforms `u_i` (here: HDR
 //!      uniforms, one distinct `var_id` per dimension, same
@@ -200,6 +200,20 @@ pub fn cholesky(matrix: &[Vec<f64>]) -> Result<Vec<Vec<f64>>, CopulaError> {
         }
     }
     Ok(l)
+}
+
+/// Lower Cholesky factor `L` of a symmetric positive-semidefinite matrix
+/// given flat row-major, returned flat row-major. The flat shape is the
+/// FFI-friendly form; [`cholesky`] above is the canonical one.
+pub fn cholesky_flat(flat: &[f64], dim: usize) -> Result<Vec<f64>, CopulaError> {
+    if dim == 0 || flat.len() != dim * dim {
+        return Err(CopulaError::NotSquare {
+            rows: dim,
+            cols: flat.len(),
+        });
+    }
+    let matrix: Vec<Vec<f64>> = flat.chunks(dim).map(<[f64]>::to_vec).collect();
+    Ok(cholesky(&matrix)?.into_iter().flatten().collect())
 }
 
 fn lower_mat_vec(l: &[Vec<f64>], x: &[f64]) -> Vec<f64> {

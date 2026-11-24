@@ -2,11 +2,10 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import {
-  GaussianCopula,
-  Metalog,
-  cholesky,
-  hdrUniform,
+  choleskyDecompose,
+  gaussianCopulaBatch,
   initSync,
+  metalogBatch,
   normalCdf,
   normalQuantile,
 } from '../pkg/sipkit_wasm.js';
@@ -28,7 +27,21 @@ const pearson = (xs, ys) => {
   return sxy / Math.sqrt(sxx * syy);
 };
 
-const seeds = [1, 2, 3, 4]; // entity, varId, seed3, seed4
+const fixture = (name) =>
+  JSON.parse(readFileSync(new URL(`../../../fixtures/${name}`, import.meta.url), 'utf8'));
+
+// Base seeds from the parity fixture; dimension i draws with varId + i,
+// matching GaussianCopula::sample_uniforms in the Rust kernel.
+const packSeeds = (dim, { entity, varId, seed3, seed4 }) => {
+  const flat = new Uint32Array(dim * 4);
+  for (let i = 0; i < dim; i++) {
+    flat[i * 4] = entity;
+    flat[i * 4 + 1] = varId + i;
+    flat[i * 4 + 2] = seed3;
+    flat[i * 4 + 3] = seed4;
+  }
+  return flat;
+};
 
 test('normalQuantile matches known points', () => {
   assert.equal(normalQuantile(0.5), 0);
@@ -40,11 +53,11 @@ test('normalQuantile matches known points', () => {
   }
 });
 
-test('cholesky factors and reconstructs, rejects non-PSD', () => {
-  const L = cholesky([4, 2, 2, 3], 2);
+test('choleskyDecompose factors and reconstructs, rejects non-PSD', () => {
+  const L = choleskyDecompose(2, [4, 2, 2, 3]);
   assert.deepEqual([...L], [2, 0, 1, Math.SQRT2]);
   const R = [1, 0.8, 0.3, 0.8, 1, 0.5, 0.3, 0.5, 1];
-  const L3 = cholesky(R, 3);
+  const L3 = choleskyDecompose(3, R);
   // L Lᵀ == R
   for (let i = 0; i < 3; i++) {
     for (let j = 0; j < 3; j++) {
@@ -53,93 +66,62 @@ test('cholesky factors and reconstructs, rejects non-PSD', () => {
       assert.ok(Math.abs(s - R[i * 3 + j]) < 1e-12);
     }
   }
-  assert.throws(() => cholesky([1, 2, 2, 1], 2));
-  assert.throws(() => cholesky([1, 0.5], 2));
+  assert.throws(() => choleskyDecompose(2, [1, 2, 2, 1]));
+  assert.throws(() => choleskyDecompose(2, [1, 0.5]));
+  assert.throws(() => choleskyDecompose(2, [1, 0.5, 0.6, 1]));
+  assert.throws(() => choleskyDecompose(0, []));
+  assert.throws(() => choleskyDecompose(1.5, [1]));
 });
 
-test('GaussianCopula is reproducible and recovers ρ = 0.8', () => {
-  const cop = new GaussianCopula(
-    [1, 0.8, 0.8, 1],
-    2,
-    [new Metalog([0, 1]), new Metalog([0, 1])],
-  );
-  assert.deepEqual(
-    [...cop.sample(7, ...seeds)],
-    [...cop.sample(7, ...seeds)],
-  );
-  assert.notDeepEqual(
-    [...cop.sample(7, ...seeds)],
-    [...cop.sample(8, ...seeds)],
-  );
+test('gaussianCopulaBatch is reproducible and recovers ρ = 0.8', () => {
+  const L = choleskyDecompose(2, [1, 0.8, 0.8, 1]);
+  const seeds = packSeeds(2, { entity: 1, varId: 2, seed3: 3, seed4: 4 });
+  const one = gaussianCopulaBatch(2, 7, 1, seeds, L);
+  assert.deepEqual([...one], [...gaussianCopulaBatch(2, 7, 1, seeds, L)]);
+  assert.notDeepEqual([...one], [...gaussianCopulaBatch(2, 8, 1, seeds, L)]);
+
   const n = 20_000;
-  const us = [];
-  for (let c = 1; c <= n; c++) us.push([...cop.sampleUniforms(c, ...seeds)]);
-  const r = pearson(
-    us.map(([u]) => normalQuantile(u)),
-    us.map(([, v]) => normalQuantile(v)),
-  );
+  const out = gaussianCopulaBatch(2, 1, n, seeds, L);
+  const us = [...out.subarray(0, n)].map((u) => normalQuantile(u));
+  const vs = [...out.subarray(n, 2 * n)].map((u) => normalQuantile(u));
+  const r = pearson(us, vs);
   assert.ok(Math.abs(r - 0.8) < 0.03, `r=${r}`);
-  cop.free();
 });
 
-test('GaussianCopula sampleMany is flat row-major and matches sample()', () => {
-  const cop = new GaussianCopula(
-    [1, 0.5, 0.5, 1],
-    2,
-    [new Metalog([0, 1]), new Metalog([10, 2])],
-  );
-  const flat = cop.sampleMany(1, 100, ...seeds);
-  assert.equal(flat.length, 200);
-  for (let i = 0; i < 100; i++) {
-    const one = cop.sample(1 + i, ...seeds);
-    assert.equal(flat[2 * i], one[0]);
-    assert.equal(flat[2 * i + 1], one[1]);
+test('gaussianCopulaBatch is column-major and matches single trials', () => {
+  const L = choleskyDecompose(2, [1, 0.5, 0.5, 1]);
+  const seeds = packSeeds(2, { entity: 1, varId: 2, seed3: 3, seed4: 4 });
+  const batch = gaussianCopulaBatch(2, 42, 3, seeds, L);
+  assert.equal(batch.length, 6);
+  for (let t = 0; t < 3; t++) {
+    const one = gaussianCopulaBatch(2, 42 + t, 1, seeds, L);
+    assert.equal(batch[t], one[0]);
+    assert.equal(batch[3 + t], one[1]);
   }
-  // sample() == marginal quantiles of sampleUniforms()
-  const m1 = new Metalog([0, 1]);
-  const m2 = new Metalog([10, 2]);
-  const u = cop.sampleUniforms(42, ...seeds);
-  const s = cop.sample(42, ...seeds);
-  assert.equal(s[0], m1.quantile(u[0]));
-  assert.equal(s[1], m2.quantile(u[1]));
-  cop.free();
-  m1.free();
-  m2.free();
 });
 
-test('GaussianCopula preserves marginals and rejects bad input', () => {
-  const cop = new GaussianCopula(
-    [1, 0.7, 0.7, 1],
-    2,
-    [new Metalog([0, 1]), new Metalog([Math.log(100), 0.2], 0)],
+test('gaussianCopulaBatch preserves marginals and rejects bad input', () => {
+  const L = choleskyDecompose(2, [1, 0.7, 0.7, 1]);
+  const seeds = packSeeds(2, { entity: 1, varId: 2, seed3: 3, seed4: 4 });
+  const flat = gaussianCopulaBatch(2, 1, 20_000, seeds, L);
+  const xs = [...metalogBatch(flat.subarray(0, 20_000), [0, 1], undefined, undefined, 0)].sort(
+    (a, b) => a - b,
   );
-  const flat = cop.sampleMany(1, 20_000, ...seeds);
-  const xs = [];
-  const ys = [];
-  for (let i = 0; i < 20_000; i++) {
-    xs.push(flat[2 * i]);
-    ys.push(flat[2 * i + 1]);
-  }
-  xs.sort((a, b) => a - b);
-  ys.sort((a, b) => a - b);
+  const ys = [
+    ...metalogBatch(flat.subarray(20_000, 40_000), [Math.log(100), 0.2], 0, undefined, 0),
+  ].sort((a, b) => a - b);
   assert.ok(Math.abs(xs[10_000]) < 0.05);
   assert.ok(Math.abs(ys[10_000] - 100) < 1.5);
-  cop.free();
-  assert.throws(() => new GaussianCopula([2, 0, 0, 1], 2, [new Metalog([0, 1]), new Metalog([0, 1])]));
-  assert.throws(() => new GaussianCopula([1, 0, 0, 1], 2, [new Metalog([0, 1])]));
+  assert.throws(() => gaussianCopulaBatch(2, 1, 1, new Uint32Array([1, 2, 3]), L));
+  assert.throws(() => gaussianCopulaBatch(2, 1, 1, seeds, [1, 0]));
+  assert.throws(() => gaussianCopulaBatch(0, 1, 1, new Uint32Array(0), []));
 });
 
-const fixture = (name) =>
-  JSON.parse(readFileSync(new URL(`../../../fixtures/${name}`, import.meta.url), 'utf8'));
-
-const metalogOf = ({ a, bounds }) =>
-  new Metalog(Float64Array.from(a), bounds.lower, bounds.upper);
-
-test('GaussianCopula matches the shared parity fixture', () => {
+test('gaussianCopulaBatch matches the shared parity fixture', () => {
   // The Cholesky factor is exact (only +, -, *, / and sqrt). Correlated
   // uniforms and samples pass through ln/exp, which engines may round one
   // ulp apart, so they use the fixture's declared tolerance. The same file
-  // is checked by the Rust and TS suites.
+  // is checked by the Rust suite.
   const parity = fixture('copula-parity.json');
   const close = (actual, expected, what) => {
     assert.equal(actual.length, expected.length, `${what} length`);
@@ -152,19 +134,25 @@ test('GaussianCopula matches the shared parity fixture', () => {
     });
   };
   for (const c of parity.cases) {
-    const n = c.marginals.length;
-    const cop = new GaussianCopula(c.correlation.flat(), n, c.marginals.map(metalogOf));
-    assert.deepEqual([...cop.factor()], c.factor.flat());
-    const { entity, varId, seed3, seed4 } = c.seeds;
+    const dim = c.marginals.length;
+    const L = choleskyDecompose(dim, c.correlation.flat());
+    assert.deepEqual([...L], c.factor.flat());
+    const seeds = packSeeds(dim, c.seeds);
     for (const s of c.samples) {
-      close(
-        [...cop.sampleUniforms(s.counter, entity, varId, seed3, seed4)],
-        s.uniforms,
-        `counter ${s.counter} uniforms`,
-      );
-      close([...cop.sample(s.counter, entity, varId, seed3, seed4)], s.x, `counter ${s.counter}`);
+      const uniforms = gaussianCopulaBatch(dim, s.counter, 1, seeds, L);
+      close([...uniforms], s.uniforms, `counter ${s.counter} uniforms`);
+      for (let d = 0; d < dim; d++) {
+        const m = c.marginals[d];
+        const x = metalogBatch(
+          Float64Array.of(uniforms[d]),
+          Float64Array.from(m.a),
+          m.bounds.lower,
+          m.bounds.upper,
+          0,
+        );
+        close([x[0]], [s.x[d]], `counter ${s.counter} dim ${d}`);
+      }
     }
-    cop.free();
   }
 });
 

@@ -2,5 +2,6 @@
 
 pub mod copula;
 pub mod hdr;
+pub mod lookup;
 pub mod metalog;
 pub mod normal;
