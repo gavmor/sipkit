@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   cholesky,
@@ -6,6 +8,8 @@ import {
   Metalog,
   normalCdf,
   normalQuantile,
+  type HdrSeeds,
+  type MetalogBounds,
 } from '../src/index.js';
 
 function matMul(a: number[][], b: number[][]): number[][] {
@@ -162,5 +166,68 @@ describe('GaussianCopula', () => {
     const L = cholesky([[1, 0.5], [0.5, 1]]);
     expect(() => correlatedUniforms(L, [0.5])).toThrow(RangeError);
     expect(() => correlatedUniforms(L, [0, 0.5])).toThrow(RangeError);
+  });
+});
+
+interface CopulaParity {
+  cases: {
+    correlation: number[][];
+    marginals: { a: number[]; bounds: MetalogBounds }[];
+    seeds: HdrSeeds;
+    factor: number[][];
+    samples: { counter: number; uniforms: number[]; x: number[] }[];
+  }[];
+}
+
+interface NormalAccuracy {
+  quantile_tol: number;
+  cdf_tol: number;
+  quantile: { p: number; z: number }[];
+  cdf: { x: number; p: number }[];
+}
+
+const parity = JSON.parse(
+  readFileSync(join(import.meta.dirname, '../../../fixtures/copula-parity.json'), 'utf8'),
+) as CopulaParity;
+
+const accuracy = JSON.parse(
+  readFileSync(join(import.meta.dirname, '../../../fixtures/normal-accuracy.json'), 'utf8'),
+) as NormalAccuracy;
+
+describe('shared copula parity fixture', () => {
+  it('matches every factor, uniform and sample exactly', () => {
+    // Exactness is the point: this file is also checked by the Rust and
+    // WASM suites, so any transcription drift fails here.
+    for (const c of parity.cases) {
+      const cop = new GaussianCopula(
+        c.correlation,
+        c.marginals.map((m) => new Metalog(m.a, m.bounds)),
+      );
+      expect(cop.factor).toEqual(c.factor);
+      for (const s of c.samples) {
+        const uniforms = cop.sampleUniforms(s.counter, c.seeds);
+        const x = cop.sample(s.counter, c.seeds);
+        expect(uniforms).toHaveLength(s.uniforms.length);
+        expect(x).toHaveLength(s.x.length);
+        s.uniforms.forEach((u, i) => expect(uniforms[i]).toBe(u));
+        s.x.forEach((v, i) => expect(x[i]).toBe(v));
+      }
+    }
+  });
+});
+
+describe('scipy normal accuracy fixture', () => {
+  it('quantile stays within the fixture tolerance', () => {
+    for (const { p, z } of accuracy.quantile) {
+      expect(Math.abs(normalQuantile(p) - z)).toBeLessThanOrEqual(
+        accuracy.quantile_tol * Math.max(1, Math.abs(z)),
+      );
+    }
+  });
+
+  it('CDF stays within the fixture tolerance', () => {
+    for (const { x, p } of accuracy.cdf) {
+      expect(Math.abs(normalCdf(x) - p)).toBeLessThanOrEqual(accuracy.cdf_tol);
+    }
   });
 });

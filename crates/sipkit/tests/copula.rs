@@ -2,6 +2,38 @@ use sipkit::copula::{GaussianCopula, cholesky, correlated_uniforms};
 use sipkit::hdr::HdrSeeds;
 use sipkit::metalog::{Metalog, MetalogBounds};
 use sipkit::normal::{normal_cdf, normal_quantile};
+use std::path::Path;
+
+fn fixture_json(name: &str) -> serde_json::Value {
+    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join(format!("../../fixtures/{name}"));
+    serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
+}
+
+fn f64_vec(v: &serde_json::Value) -> Vec<f64> {
+    v.as_array()
+        .unwrap()
+        .iter()
+        .map(|x| x.as_f64().unwrap())
+        .collect()
+}
+
+fn f64_mat(v: &serde_json::Value) -> Vec<Vec<f64>> {
+    v.as_array().unwrap().iter().map(f64_vec).collect()
+}
+
+fn bounds_of(b: &serde_json::Value) -> MetalogBounds {
+    let num = |k: &str| b[k].as_f64().unwrap();
+    match b["kind"].as_str().unwrap() {
+        "unbounded" => MetalogBounds::Unbounded,
+        "lower" => MetalogBounds::Lower(num("lower")),
+        "upper" => MetalogBounds::Upper(num("upper")),
+        "bounded" => MetalogBounds::Bounded {
+            lower: num("lower"),
+            upper: num("upper"),
+        },
+        other => panic!("unknown bounds kind {other}"),
+    }
+}
 
 fn mat_mul(a: &[Vec<f64>], b: &[Vec<f64>]) -> Vec<Vec<f64>> {
     a.iter()
@@ -210,4 +242,64 @@ fn copula_rejects_bad_construction() {
     let l = cholesky(&[vec![1.0, 0.5], vec![0.5, 1.0]]).unwrap();
     assert!(correlated_uniforms(&l, &[0.5]).is_err());
     assert!(correlated_uniforms(&l, &[0.0, 0.5]).is_err());
+}
+
+#[test]
+fn copula_matches_shared_parity_fixture() {
+    // The fixture is generated from this (canonical) implementation, so
+    // the values must match exactly — bit-identical f64. The same file
+    // is checked by the TS and WASM suites; any transcription drift in
+    // any language fails here.
+    let json = fixture_json("copula-parity.json");
+    for case in json["cases"].as_array().unwrap() {
+        let seeds = HdrSeeds {
+            entity: case["seeds"]["entity"].as_u64().unwrap() as u32,
+            var_id: case["seeds"]["varId"].as_u64().unwrap() as u32,
+            seed3: case["seeds"]["seed3"].as_u64().unwrap() as u32,
+            seed4: case["seeds"]["seed4"].as_u64().unwrap() as u32,
+        };
+        let marginals: Vec<Metalog> = case["marginals"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|m| Metalog::new(f64_vec(&m["a"]), bounds_of(&m["bounds"])).unwrap())
+            .collect();
+        let cop = GaussianCopula::new(f64_mat(&case["correlation"]), marginals).unwrap();
+        assert_eq!(cop.factor().to_vec(), f64_mat(&case["factor"]));
+        for s in case["samples"].as_array().unwrap() {
+            let counter = s["counter"].as_u64().unwrap() as u32;
+            assert_eq!(
+                cop.sample_uniforms(counter, &seeds).unwrap(),
+                f64_vec(&s["uniforms"]),
+                "counter {counter} uniforms"
+            );
+            assert_eq!(
+                cop.sample(counter, &seeds).unwrap(),
+                f64_vec(&s["x"]),
+                "counter {counter} sample"
+            );
+        }
+    }
+}
+
+#[test]
+fn normal_matches_scipy_fixture() {
+    // Tolerances come from the fixture itself; see its `measured` note
+    // for how they were chosen (observed max error x ~9 headroom).
+    let json = fixture_json("normal-accuracy.json");
+    let qtol = json["quantile_tol"].as_f64().unwrap();
+    let ctol = json["cdf_tol"].as_f64().unwrap();
+    for q in json["quantile"].as_array().unwrap() {
+        let (p, z) = (q["p"].as_f64().unwrap(), q["z"].as_f64().unwrap());
+        let err = (normal_quantile(p) - z).abs();
+        assert!(
+            err <= qtol * z.abs().max(1.0),
+            "p={p}: quantile error {err} exceeds {qtol} * max(1, |{z}|)"
+        );
+    }
+    for c in json["cdf"].as_array().unwrap() {
+        let (x, p) = (c["x"].as_f64().unwrap(), c["p"].as_f64().unwrap());
+        let err = (normal_cdf(x) - p).abs();
+        assert!(err <= ctol, "x={x}: cdf error {err} exceeds {ctol}");
+    }
 }

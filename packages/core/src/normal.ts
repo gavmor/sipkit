@@ -37,7 +37,10 @@ export function normalCdf(x: number): number {
   return 0.5 * (1 + s * erf);
 }
 
-// Acklam's rational approximation, |error| < 1.15e-9 in absolute value.
+// Acklam's rational approximation. Measured against scipy 1.11.4
+// (`fixtures/normal-accuracy.json`, 25 points over p in [1e-9, 1-1e-9]):
+// max |error| 5.0e-9 (at p = 1e-6, in the tail — the often-quoted
+// 1.15e-9 does not hold there); scaled error |err| / max(1, |z|) <= 1.2e-9.
 const A = [
   -3.969683028665376e1, 2.209460984245205e2, -2.759285104469687e2,
   1.38357751867269e2, -3.066479806614716e1, 2.506628277459239,

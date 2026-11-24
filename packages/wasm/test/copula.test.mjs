@@ -128,3 +128,44 @@ test('GaussianCopula preserves marginals and rejects bad input', () => {
   assert.throws(() => new GaussianCopula([2, 0, 0, 1], 2, [new Metalog([0, 1]), new Metalog([0, 1])]));
   assert.throws(() => new GaussianCopula([1, 0, 0, 1], 2, [new Metalog([0, 1])]));
 });
+
+const fixture = (name) =>
+  JSON.parse(readFileSync(new URL(`../../../fixtures/${name}`, import.meta.url), 'utf8'));
+
+const metalogOf = ({ a, bounds }) =>
+  new Metalog(Float64Array.from(a), bounds.lower, bounds.upper);
+
+test('GaussianCopula matches the shared parity fixture exactly', () => {
+  // Exactness is the point: this file is also checked by the Rust and
+  // TS suites, so any transcription drift fails here.
+  for (const c of fixture('copula-parity.json').cases) {
+    const n = c.marginals.length;
+    const cop = new GaussianCopula(c.correlation.flat(), n, c.marginals.map(metalogOf));
+    assert.deepEqual([...cop.factor()], c.factor.flat());
+    const { entity, varId, seed3, seed4 } = c.seeds;
+    for (const s of c.samples) {
+      assert.deepEqual(
+        [...cop.sampleUniforms(s.counter, entity, varId, seed3, seed4)],
+        s.uniforms,
+        `counter ${s.counter} uniforms`,
+      );
+      assert.deepEqual(
+        [...cop.sample(s.counter, entity, varId, seed3, seed4)],
+        s.x,
+        `counter ${s.counter}`,
+      );
+    }
+    cop.free();
+  }
+});
+
+test('normalQuantile / normalCdf match the scipy accuracy fixture', () => {
+  const { quantile_tol, cdf_tol, quantile, cdf } = fixture('normal-accuracy.json');
+  for (const { p, z } of quantile) {
+    const err = Math.abs(normalQuantile(p) - z);
+    assert.ok(err <= quantile_tol * Math.max(1, Math.abs(z)), `p=${p} err=${err}`);
+  }
+  for (const { x, p } of cdf) {
+    assert.ok(Math.abs(normalCdf(x) - p) <= cdf_tol, `x=${x}`);
+  }
+});

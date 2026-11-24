@@ -36,7 +36,10 @@ pub fn normal_cdf(x: f64) -> f64 {
     0.5 * (1.0 + s * erf)
 }
 
-// Acklam's rational approximation, |error| ~1.6e-9.
+// Acklam's rational approximation. Measured against scipy 1.11.4
+// (`fixtures/normal-accuracy.json`, 25 points over p in [1e-9, 1-1e-9]):
+// max |error| 5.0e-9 (at p = 1e-6, in the tail — the often-quoted
+// 1.15e-9 does not hold there); scaled error |err| / max(1, |z|) <= 1.2e-9.
 const A: [f64; 6] = [
     -3.969683028665376e1,
     2.209460984245205e2,
