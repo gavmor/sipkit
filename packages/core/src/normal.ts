@@ -38,13 +38,16 @@ export function normalCdf(x: number): number {
 }
 
 // Wichura's Algorithm AS 241 (PPND16), Applied Statistics 37 (1988) 477-484.
-// Same literals, same Horner order and same operation order as
-// `crates/sipkit/src/normal.rs`. Coefficients are highest degree first;
-// each denominator omits its constant term, which is 1. Regions, with
+// The Rust kernel delegates to `distrs::Normal::ppf`; this is a hand port
+// of the same algorithm (JS has no equivalent primitive), with the same
+// Horner order, operation order and region boundaries (strict `<`).
+// The 45 literals were diffed against R's `src/nmath/qnorm.c`.
+// Coefficients are highest degree first; each denominator omits its
+// constant term, which is 1. Regions, with
 // q = p - 1/2 and s = sqrt(-ln(min(p, 1 - p))):
-//   |q| <= 0.425            x = q * A(r) / B(r), r = 0.425^2 - q^2
-//   |q| > 0.425, s <= 5     x = C(s - 1.6) / D(s - 1.6)
-//   |q| > 0.425, s > 5      x = E(s - 5)   / F(s - 5)
+//   |q| < 0.425             x = q * A(r) / B(r), r = 0.425^2 - q^2
+//   |q| >= 0.425, s < 5     x = C(s - 1.6) / D(s - 1.6)
+//   |q| >= 0.425, s >= 5    x = E(s - 5)   / F(s - 5)
 const A = [
   2509.0809287301227,
   33430.57558358813,
@@ -119,14 +122,14 @@ function horner(coeffs: readonly number[], x: number): number {
 export function normalQuantile(p: number): number {
   if (!(p > 0 && p < 1)) return NaN;
   const q = p - 0.5;
-  if (Math.abs(q) <= SPLIT) {
+  if (Math.abs(q) < SPLIT) {
     const r = CENTRAL_OFFSET - q * q;
     return (q * horner(A, r)) / (horner(B, r) * r + 1);
   }
   const tail = q < 0 ? p : 1 - p;
   const s = Math.sqrt(-Math.log(tail));
   let v: number;
-  if (s <= 5) {
+  if (s < 5) {
     const y = s - 1.6;
     v = horner(C, y) / (horner(D, y) * y + 1);
   } else {
