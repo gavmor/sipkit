@@ -1,0 +1,293 @@
+{
+  "cases": [
+    {
+      "correlation": [
+        [
+          1.0,
+          0.5
+        ],
+        [
+          0.5,
+          1.0
+        ]
+      ],
+      "factor": [
+        [
+          1.0,
+          0.0
+        ],
+        [
+          0.5,
+          0.8660254037844386
+        ]
+      ],
+      "marginals": [
+        {
+          "a": [
+            0.0,
+            1.0
+          ],
+          "bounds": {
+            "kind": "unbounded"
+          }
+        },
+        {
+          "a": [
+            10.0,
+            2.0
+          ],
+          "bounds": {
+            "kind": "unbounded"
+          }
+        }
+      ],
+      "samples": [
+        {
+          "counter": 1,
+          "uniforms": [
+            0.7263180113031811,
+            0.3866113438460619
+          ],
+          "x": [
+            0.9760211438678246,
+            9.076842301635244
+          ]
+        },
+        {
+          "counter": 2,
+          "uniforms": [
+            0.6267787276198593,
+            0.6858715954650113
+          ],
+          "x": [
+            0.5184221045438233,
+            11.561777195249517
+          ]
+        },
+        {
+          "counter": 7,
+          "uniforms": [
+            0.009668115962405077,
+            0.23628633127211335
+          ],
+          "x": [
+            -4.629206666125314,
+            7.653702795891075
+          ]
+        },
+        {
+          "counter": 8,
+          "uniforms": [
+            0.08186843750903527,
+            0.04442044387867072
+          ],
+          "x": [
+            -2.417227156430666,
+            3.862763579442703
+          ]
+        },
+        {
+          "counter": 100,
+          "uniforms": [
+            0.845700719233548,
+            0.6644710416112696
+          ],
+          "x": [
+            1.7012714391563262,
+            11.366566062353765
+          ]
+        },
+        {
+          "counter": 1000,
+          "uniforms": [
+            0.09145389406760485,
+            0.008968273289916506
+          ],
+          "x": [
+            -2.2960106807466016,
+            0.5898932210845089
+          ]
+        }
+      ],
+      "seeds": {
+        "entity": 1,
+        "seed3": 3,
+        "seed4": 4,
+        "varId": 2
+      }
+    },
+    {
+      "correlation": [
+        [
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0
+        ]
+      ],
+      "factor": [
+        [
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0
+        ]
+      ],
+      "marginals": [
+        {
+          "a": [
+            0.0,
+            1.0
+          ],
+          "bounds": {
+            "kind": "unbounded"
+          }
+        },
+        {
+          "a": [
+            10.0,
+            2.0
+          ],
+          "bounds": {
+            "kind": "unbounded"
+          }
+        }
+      ],
+      "samples": [
+        {
+          "counter": 7,
+          "uniforms": [
+            0.009668115962405077,
+            0.6988139828340785
+          ],
+          "x": [
+            -4.629206666125314,
+            11.683313033486481
+          ]
+        },
+        {
+          "counter": 42,
+          "uniforms": [
+            0.9390970088986387,
+            0.09419317847244046
+          ],
+          "x": [
+            2.7356364962586004,
+            5.473043403114482
+          ]
+        }
+      ],
+      "seeds": {
+        "entity": 1,
+        "seed3": 3,
+        "seed4": 4,
+        "varId": 2
+      }
+    },
+    {
+      "correlation": [
+        [
+          1.0,
+          0.5,
+          0.2
+        ],
+        [
+          0.5,
+          1.0,
+          0.3
+        ],
+        [
+          0.2,
+          0.3,
+          1.0
+        ]
+      ],
+      "factor": [
+        [
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.5,
+          0.8660254037844386,
+          0.0
+        ],
+        [
+          0.2,
+          0.2309401076758503,
+          0.9521904571390466
+        ]
+      ],
+      "marginals": [
+        {
+          "a": [
+            0.0,
+            1.0
+          ],
+          "bounds": {
+            "kind": "unbounded"
+          }
+        },
+        {
+          "a": [
+            10.0,
+            2.0
+          ],
+          "bounds": {
+            "kind": "unbounded"
+          }
+        },
+        {
+          "a": [
+            -5.0,
+            0.5
+          ],
+          "bounds": {
+            "kind": "unbounded"
+          }
+        }
+      ],
+      "samples": [
+        {
+          "counter": 7,
+          "uniforms": [
+            0.009668115962405077,
+            0.23628633127211335,
+            0.3130988659384064
+          ],
+          "x": [
+            -4.629206666125314,
+            7.653702795891075,
+            -5.392835682960223
+          ]
+        },
+        {
+          "counter": 8,
+          "uniforms": [
+            0.08186843750903527,
+            0.04442044387867072,
+            0.006147576827187973
+          ],
+          "x": [
+            -2.417227156430666,
+            3.862763579442703,
+            -7.542765367832583
+          ]
+        }
+      ],
+      "seeds": {
+        "entity": 1,
+        "seed3": 3,
+        "seed4": 4,
+        "varId": 2
+      }
+    }
+  ],
+  "description": "Gaussian copula cross-language parity vectors. Generated from the Rust kernel (the canonical implementation); the TypeScript and WASM kernels must reproduce every value exactly (bit-identical f64). Exactness is the point: the three implementations mirror the same arithmetic (same Acklam coefficients, same Horner order, same Cholesky recurrence), and any transcription drift must fail here, not in production Monte Carlo runs.",
+  "source": "Generated 2026-11-24 by crates/sipkit/examples/gen_copula_fixture.rs (temporary, deleted after generation) from the Rust kernel at the PR #6 head."
+}

@@ -3,8 +3,10 @@
 //! Integer arguments are taken as `f64` and validated here: wasm-bindgen's `u32` coercion would
 //! silently truncate `1.5` and wrap `-1`, diverging from `@gavmor/sipkit-core`.
 
+use sipkit::copula::{self, GaussianCopula as CoreCopula};
 use sipkit::hdr::{self, HdrSeeds, MAX_SEED};
 use sipkit::metalog::{self, MetalogBounds};
+use sipkit::normal;
 use wasm_bindgen::prelude::*;
 
 /// `value` as `u32` if it is an integer in `[0, max]`.
@@ -109,5 +111,120 @@ impl Metalog {
             *v = self.0.quantile(*v);
         }
         Ok(out)
+    }
+}
+
+/// Standard normal quantile Φ⁻¹(p); NaN unless `0 < p < 1`.
+#[wasm_bindgen(js_name = normalQuantile)]
+pub fn normal_quantile(p: f64) -> f64 {
+    normal::normal_quantile(p)
+}
+
+/// Standard normal CDF Φ(x).
+#[wasm_bindgen(js_name = normalCdf)]
+pub fn normal_cdf(x: f64) -> f64 {
+    normal::normal_cdf(x)
+}
+
+/// Flat row-major `n × n` matrix from a flat slice.
+fn unflatten(flat: &[f64], n: usize) -> Result<Vec<Vec<f64>>, JsError> {
+    if flat.len() != n * n {
+        return Err(JsError::new(&format!(
+            "expected {}×{} = {} entries, got {}",
+            n,
+            n,
+            n * n,
+            flat.len()
+        )));
+    }
+    Ok(flat.chunks(n).map(<[f64]>::to_vec).collect())
+}
+
+fn flatten(matrix: &[Vec<f64>]) -> Vec<f64> {
+    matrix.iter().flat_map(|row| row.iter().copied()).collect()
+}
+
+/// Lower Cholesky factor of a symmetric positive-semidefinite matrix,
+/// flat row-major in and out. Throws on a non-PSD matrix.
+#[wasm_bindgen]
+pub fn cholesky(matrix: Vec<f64>, n: f64) -> Result<Vec<f64>, JsError> {
+    let n = int_arg("n", n, 10_000)? as usize;
+    let matrix = unflatten(&matrix, n)?;
+    Ok(flatten(&copula::cholesky(&matrix)?))
+}
+
+/// Gaussian copula over Metalog marginals. `correlation` is flat
+/// row-major; `marginals` are `Metalog` instances in the same order.
+#[wasm_bindgen]
+pub struct GaussianCopula(CoreCopula);
+
+#[wasm_bindgen]
+impl GaussianCopula {
+    #[wasm_bindgen(constructor)]
+    pub fn new(
+        correlation: Vec<f64>,
+        n: f64,
+        marginals: Vec<Metalog>,
+    ) -> Result<GaussianCopula, JsError> {
+        let n = int_arg("n", n, 10_000)? as usize;
+        let correlation = unflatten(&correlation, n)?;
+        let marginals = marginals.into_iter().map(|m| m.0).collect();
+        Ok(Self(CoreCopula::new(correlation, marginals)?))
+    }
+
+    /// Lower Cholesky factor of the correlation matrix, flat row-major.
+    pub fn factor(&self) -> Vec<f64> {
+        flatten(self.0.factor())
+    }
+
+    /// Correlated uniforms for one trial.
+    #[wasm_bindgen(js_name = sampleUniforms)]
+    pub fn sample_uniforms(
+        &self,
+        counter: f64,
+        entity: f64,
+        #[wasm_bindgen(js_name = varId)] var_id: f64,
+        seed3: f64,
+        seed4: f64,
+    ) -> Result<Vec<f64>, JsError> {
+        Ok(self.0.sample_uniforms(
+            int_arg("counter", counter, MAX_SEED)?,
+            &seeds(entity, var_id, seed3, seed4)?,
+        )?)
+    }
+
+    /// One joint sample: a value from each marginal, coupled by the copula.
+    pub fn sample(
+        &self,
+        counter: f64,
+        entity: f64,
+        #[wasm_bindgen(js_name = varId)] var_id: f64,
+        seed3: f64,
+        seed4: f64,
+    ) -> Result<Vec<f64>, JsError> {
+        Ok(self.0.sample(
+            int_arg("counter", counter, MAX_SEED)?,
+            &seeds(entity, var_id, seed3, seed4)?,
+        )?)
+    }
+
+    /// `count` joint samples, flat row-major (`count` rows of `n` values).
+    #[wasm_bindgen(js_name = sampleMany)]
+    pub fn sample_many(
+        &self,
+        #[wasm_bindgen(js_name = firstCounter)] first_counter: f64,
+        count: f64,
+        entity: f64,
+        #[wasm_bindgen(js_name = varId)] var_id: f64,
+        seed3: f64,
+        seed4: f64,
+    ) -> Result<Vec<f64>, JsError> {
+        let count = int_arg("count", count, MAX_SEED + 1)? as usize;
+        let samples = self.0.sample_many(
+            int_arg("firstCounter", first_counter, MAX_SEED)?,
+            count,
+            &seeds(entity, var_id, seed3, seed4)?,
+        )?;
+        Ok(samples.into_iter().flatten().collect())
     }
 }
