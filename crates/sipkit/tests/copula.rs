@@ -84,9 +84,8 @@ fn quantile_matches_known_points() {
 
 #[test]
 fn quantile_round_trips_through_cdf() {
-    // Limited by normal_cdf's A&S 7.1.26 accuracy (|error| < 1.5e-7).
     for z in [-2.5, -1.0, -0.25, 0.0, 0.25, 1.0, 2.5] {
-        assert!((normal_quantile(normal_cdf(z)) - z).abs() < 1e-5, "z={z}");
+        assert!((normal_quantile(normal_cdf(z)) - z).abs() < 1e-13, "z={z}");
     }
 }
 
@@ -338,6 +337,9 @@ fn normal_matches_accuracy_fixture() {
     for c in json["cdf"].as_array().unwrap() {
         let (x, p) = (c["x"].as_f64().unwrap(), c["p"].as_f64().unwrap());
         let err = (normal_cdf(x) - p).abs();
-        assert!(err <= ctol, "x={x}: cdf error {err} exceeds {ctol}");
+        assert!(
+            err <= ctol * p,
+            "x={x}: cdf error {err} exceeds {ctol} * {p}"
+        );
     }
 }

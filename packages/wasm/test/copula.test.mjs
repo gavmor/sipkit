@@ -163,6 +163,6 @@ test('normalQuantile / normalCdf match the normal accuracy fixture', () => {
     assert.ok(err <= quantile_tol * Math.max(1, Math.abs(z)), `p=${p} err=${err}`);
   }
   for (const { x, p } of cdf) {
-    assert.ok(Math.abs(normalCdf(x) - p) <= cdf_tol, `x=${x}`);
+    assert.ok(Math.abs(normalCdf(x) - p) <= cdf_tol * p, `x=${x}`);
   }
 });

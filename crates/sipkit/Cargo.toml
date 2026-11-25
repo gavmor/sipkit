@@ -14,3 +14,4 @@ serde_json = { version = "1", features = ["float_roundtrip"] }
 
 [dependencies]
 distrs = "0.2.3"
+libm = "0.2.16"
